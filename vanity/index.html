@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Vanity</title>
+
+    <meta charset="utf-8">
+    <meta name="description" content="Vanity &gt; Privacy &gt; Vanity">
+    <meta name="viewport" content="width=device-width">
+
+    <style>
+      html, body {
+        padding: 0;
+      }
+      body {
+        color: #333;
+        font: 2em monospace; 
+      }
+
+      .start {
+        visible: false;
+      }
+
+      video {
+        width: 100%    !important;
+        max-width: 100%    !important;
+        height: auto   !important;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: -1000;
+      }
+    </style>
+
+    <script type="text/javascript" src="js/socketpeer.min.js" defer></script>
+    <script type="text/javascript" src="js/app.js" defer></script>
+
+  </head>
+  <body>
+    <main id="main" class="main">
+      <button class="start">start</button>
+      <div id="videos">
+      </div>
+    </main>
+    <footer id="footer"></footer>
+    <script src="js/socketpeer.min.js"></script>
+    <script>
+
+      function _append(msg) {
+        main.innerHTML += '<p>' + msg + '</p>';
+        //footer.scrollIntoView();
+      }
+
+      function error(msg) {
+        console.error(msg);
+        _append(msg);
+      }
+
+      function log(msg) {
+        console.log(msg);
+        _append(msg);
+      }
+
+    </script>
+    <script>
+      (function () {
+
+      window.addEventListener('DOMContentLoaded', function() {
+        if (location.search.indexOf('display') != -1) {
+          //document.body.setAttribute("style", "-moz-transform: rotate(-90deg);");
+          document.querySelector('.start').style.visible = true;
+          startWithStream();
+        }
+        else {
+          log('getUserMedia');
+          navigator.mediaDevices.getUserMedia({video: true}).then(function (stream) {
+            log('got stream');
+            var video = document.createElement('video');
+            document.querySelector('#videos').appendChild(video);
+            video.src = window.URL.createObjectURL(stream);
+            video.setAttribute('autoplay', true);
+
+            startWithStream(stream);
+          });
+        }
+
+        document.querySelector('.start').addEventListener('click', function (e) {
+          console.log('Requesting fullscreen...');
+          if (document.documentElement.mozRequestFullScreen)
+            document.documentElement.mozRequestFullScreen();
+          else
+            alert('wtf')
+          console.log('fullscreen?');
+        });
+
+        function startWithStream (stream) {
+          var peer = new SocketPeer({
+            pairCode: 'yolo-stream',
+            stream: stream,
+            url: 'http://' + location.hostname + ':3000/socketpeer/'
+          });
+
+          peer.on('connect', function () {
+            log('connected');
+          });
+
+          peer.on('connect_timeout', function () {
+            error('connect_timeout');
+          });
+
+          peer.on('data', function (data) {
+            log('data: ' + data);
+          });
+
+          peer.on('busy', function () {
+            error('pairCode already in use');
+          });
+
+          peer.on('rtc.signal', function () {
+            log('rtc.signal');
+          });
+
+          peer.on('peer.found', function () {
+            log('peer.found');
+            peer.send('hello');
+          });
+
+          peer.on('upgrade', function () {
+            log('upgrade');
+            peer.send('upgraded');
+          });
+
+          peer.on('upgrade_attempt', function () {
+            log('upgrade_attempt');
+          });
+
+          peer.on('downgrade', function () {
+            log('downgrade');
+          });
+
+          peer.on('error', function (err) {
+            error('error: ' + err);
+          });
+
+          peer.on('stream', function (stream) {
+            log('stream');
+            var video = document.createElement('video');
+            document.querySelector('#videos').appendChild(video);
+            video.src = window.URL.createObjectURL(stream);
+            video.setAttribute('autoplay', true);
+          });
+
+          window.peer = peer;
+
+        }
+      });
+
+      })();
+    </script>
+  </body>
+</html>
