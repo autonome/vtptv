@@ -20,7 +20,7 @@
       <button class="start-nostream">no stream</button>
     </main>
     <footer id="footer"></footer>
-    <script src="/socketpeer/socketpeer.js"></script>
+    <script src="../socketpeer.min.js"></script>
     <script>
 
       function _append(msg) {
@@ -113,6 +113,7 @@
             video.onloadedmetadata = function(e) {
               log('video play');
               video.play();
+              log('video playing');
             };
           });
 
